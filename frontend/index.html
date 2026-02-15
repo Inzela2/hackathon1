@@ -1,0 +1,4302 @@
+<!-- ```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carly - AI Emergency Assistant</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background: #000;
+        }
+
+        .earth-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-image: url('bg.PNG');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+        }
+
+        .earth-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            font-size: 72px;
+            font-weight: 700;
+            letter-spacing: -3px;
+            margin-bottom: 20px;
+        }
+
+        .roll-wrap {
+            height: 90px;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .roll {
+            animation: roll 10s infinite;
+        }
+
+        .roll div {
+            height: 90px;
+            line-height: 90px;
+            font-size: 72px;
+            font-weight: 700;
+        }
+
+        @keyframes roll {
+            0%, 18% { transform: translateY(0); }
+            20%, 38% { transform: translateY(-90px); }
+            40%, 58% { transform: translateY(-180px); }
+            60%, 78% { transform: translateY(-270px); }
+            80%, 98% { transform: translateY(-360px); }
+            100% { transform: translateY(0); }
+        }
+
+        .chat-window {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 30px;
+            height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .chat-input {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .camera-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .camera-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: scale(1.05);
+        }
+
+        .camera-icon {
+            font-size: 24px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 14px 20px;
+            color: white;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .mic-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mic-btn.on {
+            background: linear-gradient(135deg, #FF3B30, #C7001E);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 59, 48, 0); }
+        }
+
+        .mic-icon {
+            font-size: 24px;
+        }
+
+        .messages {
+            padding-bottom: 100px;
+        }
+
+        .msg {
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg.c {
+            text-align: left;
+        }
+
+        .msg.u {
+            text-align: right;
+        }
+
+        .bubble {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 70%;
+            color: white;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .msg.c .bubble {
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .msg.u .bubble {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            min-height: 400px;
+        }
+
+        .panel h2 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.6);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .help-status {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .agent {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .agent.active {
+            background: rgba(0, 122, 255, 0.15);
+            border-color: rgba(0, 122, 255, 0.4);
+        }
+
+        .agent.thinking {
+            background: rgba(255, 204, 0, 0.15);
+            border-color: rgba(255, 204, 0, 0.4);
+        }
+
+        .agent.complete {
+            background: rgba(52, 199, 89, 0.15);
+            border-color: rgba(52, 199, 89, 0.4);
+        }
+
+        .agent-icon {
+            font-size: 28px;
+        }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .agent-status {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .agent.active .agent-status {
+            color: #007AFF;
+        }
+
+        .agent.thinking .agent-status {
+            color: #FFCC00;
+        }
+
+        .agent.complete .agent-status {
+            color: #34C759;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #007AFF;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="earth-bg"></div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>AI to help you find</h1>
+            <div class="roll-wrap">
+                <div class="roll">
+                    <div>Tradie</div>
+                    <div>Plumber</div>
+                    <div>Electrician</div>
+                    <div>Roofer</div>
+                    <div>Builder</div>
+                    <div>Tradie</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-window">
+            <div class="messages" id="messages"></div>
+            <div class="chat-input">
+                <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                <button class="camera-btn" id="cameraBtn">
+                    <div class="camera-icon">📷</div>
+                </button>
+                <input type="text" class="input-field" id="textInput" placeholder="Type your emergency...">
+                <button class="mic-btn" id="mic">
+                    <div class="mic-icon">🎤</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <div class="panel">
+                <h2>🗺️ Live Tracking</h2>
+                <div class="map-container" id="map">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📍</div>
+                        <div>Waiting for location...</div>
+                    </div>
+                </div>
+                <div class="help-status" id="helpStatus"></div>
+            </div>
+
+            <div class="panel">
+                <h2>🤖 AI Agents</h2>
+                <div class="agents-grid">
+                    <div class="agent" id="agent-carly">
+                        <div class="agent-icon">💬</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Carly AI</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-empathy">
+                        <div class="agent-icon">💙</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Empathy</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-vision">
+                        <div class="agent-icon">👁️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Vision</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-haggler">
+                        <div class="agent-icon">💼</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Haggler</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-finance">
+                        <div class="agent-icon">💳</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Finance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-phone">
+                        <div class="agent-icon">📞</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Phone</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-diy">
+                        <div class="agent-icon">🛠️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">DIY</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-insurance">
+                        <div class="agent-icon">📋</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Insurance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let id = null;
+        let rec = null;
+        let on = false;
+        const io = window.io('http://localhost:5000');
+
+        if ('webkitSpeechRecognition' in window) {
+            rec = new webkitSpeechRecognition();
+            rec.continuous = false;
+            rec.lang = 'en-AU';
+        }
+
+        document.getElementById('cameraBtn').onclick = () => {
+            document.getElementById('photoInput').click();
+        };
+
+        document.getElementById('photoInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            msg('u', '📷 Photo uploaded');
+            setAgent('vision', 'thinking');
+
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('claim_id', id);
+
+            try {
+                const r = await fetch('/api/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const d = await r.json();
+                if (d.success) {
+                    setAgent('vision', 'complete');
+                    msg('c', 'Got it! Analyzing your photo now...');
+                    speak('Got it! Analyzing your photo now.');
+                    setTimeout(() => find(), 2000);
+                }
+            } catch (err) {
+                console.error('Photo upload error:', err);
+                msg('c', 'Had trouble with the photo. Can you try again?');
+            }
+        };
+
+        document.getElementById('mic').onclick = () => {
+            if (!rec) {
+                alert('Chrome only');
+                return;
+            }
+
+            if (on) {
+                rec.stop();
+                on = false;
+                document.getElementById('mic').classList.remove('on');
+            } else {
+                rec.start();
+                on = true;
+                document.getElementById('mic').classList.add('on');
+            }
+        };
+
+        rec.onresult = async (e) => {
+            const txt = e.results[0][0].transcript;
+            msg('u', txt);
+            rec.stop();
+            on = false;
+            document.getElementById('mic').classList.remove('on');
+            await send(txt);
+        };
+
+        document.getElementById('textInput').onkeypress = async (e) => {
+            if (e.key === 'Enter') {
+                const txt = e.target.value.trim();
+                if (txt) {
+                    msg('u', txt);
+                    e.target.value = '';
+                    await send(txt);
+                }
+            }
+        };
+
+        async function send(txt) {
+            setAgent('carly', 'thinking');
+            
+            const r = await fetch('/api/carly-chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: txt, claim_id: id})
+            });
+            
+            const d = await r.json();
+            if (d.success) {
+                id = d.claim_id;
+                msg('c', d.carly_response);
+                speak(d.carly_response);
+                setAgent('carly', 'active');
+                
+                if (d.ready_for_tradie && d.claim_data.has_photo) {
+                    setTimeout(() => find(), 2000);
+                }
+            }
+        }
+
+        function msg(who, txt) {
+            const m = document.createElement('div');
+            m.className = `msg ${who}`;
+            m.innerHTML = `<div class="bubble">${txt}</div>`;
+            document.getElementById('messages').appendChild(m);
+            document.querySelector('.chat-window').scrollTop = 999999;
+        }
+
+        function speak(txt) {
+            const u = new SpeechSynthesisUtterance(txt);
+            u.lang = 'en-AU';
+            u.rate = 1.0;
+            u.pitch = 1.1;
+            speechSynthesis.speak(u);
+        }
+
+        function setAgent(name, status) {
+            const agent = document.getElementById(`agent-${name}`);
+            if (!agent) return;
+            
+            agent.classList.remove('active', 'thinking', 'complete');
+            const statusEl = agent.querySelector('.agent-status');
+            
+            if (status === 'active') {
+                agent.classList.add('active');
+                statusEl.textContent = 'Active';
+            } else if (status === 'thinking') {
+                agent.classList.add('thinking');
+                statusEl.textContent = 'Thinking...';
+            } else if (status === 'complete') {
+                agent.classList.add('complete');
+                statusEl.textContent = 'Complete';
+            } else {
+                statusEl.textContent = 'Idle';
+            }
+        }
+
+        async function find() {
+            setAgent('vision', 'thinking');
+            setAgent('haggler', 'thinking');
+            
+            const r = await fetch('/api/find-tradies', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({claim_id: id})
+            });
+            const d = await r.json();
+            
+            if (d.success) {
+                setAgent('vision', 'complete');
+                setAgent('haggler', 'active');
+                speak(`Found ${d.tradies.length} ${d.trade_type}s. Calling now.`);
+                setTimeout(() => call(0), 2000);
+            }
+        }
+
+        async function call(idx) {
+            setAgent('phone', 'thinking');
+            
+            const r = await fetch('/api/call-tradie', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({claim_id: id, tradie_index: idx})
+            });
+            const d = await r.json();
+            
+            if (d.success) {
+                setAgent('phone', 'active');
+                speak('Making real phone call now.');
+                showMap();
+            }
+        }
+
+        function showMap() {
+            const map = document.getElementById('map');
+            map.innerHTML = `
+                <div class="map-marker">🚗</div>
+            `;
+            document.getElementById('helpStatus').textContent = '✓ Help is on the way!';
+        }
+
+        io.on('call_update', (d) => {
+            if (d.status === 'completed') {
+                setAgent('phone', 'complete');
+                setAgent('finance', 'active');
+                speak('Tradie confirmed! Arriving in 20 minutes.');
+            }
+        });
+
+        window.onload = () => {
+            setTimeout(() => {
+                const g = "Hi! I'm Carly. What's your emergency?";
+                msg('c', g);
+                speak(g);
+                setAgent('carly', 'active');
+            }, 1000);
+        };
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carly - AI Emergency Assistant</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background: #000;
+        }
+
+        .earth-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-image: url('bg.PNG');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+        }
+
+        .earth-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            font-size: 72px;
+            font-weight: 700;
+            letter-spacing: -3px;
+            margin-bottom: 20px;
+        }
+
+        .roll-wrap {
+            height: 90px;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .roll {
+            animation: roll 10s infinite;
+        }
+
+        .roll div {
+            height: 90px;
+            line-height: 90px;
+            font-size: 72px;
+            font-weight: 700;
+        }
+
+        @keyframes roll {
+            0%, 18% { transform: translateY(0); }
+            20%, 38% { transform: translateY(-90px); }
+            40%, 58% { transform: translateY(-180px); }
+            60%, 78% { transform: translateY(-270px); }
+            80%, 98% { transform: translateY(-360px); }
+            100% { transform: translateY(0); }
+        }
+
+        .chat-window {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            height: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            margin-bottom: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            padding-bottom: 20px;
+        }
+
+        .chat-input {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .camera-btn {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .camera-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: scale(1.05);
+        }
+
+        .camera-icon {
+            font-size: 24px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 14px 20px;
+            color: white;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .mic-btn {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mic-btn.on {
+            background: linear-gradient(135deg, #FF3B30, #C7001E);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 59, 48, 0); }
+        }
+
+        .mic-icon {
+            font-size: 24px;
+        }
+
+        .msg {
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg.c {
+            text-align: left;
+        }
+
+        .msg.u {
+            text-align: right;
+        }
+
+        .bubble {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 70%;
+            color: white;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .msg.c .bubble {
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .msg.u .bubble {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            min-height: 400px;
+        }
+
+        .panel h2 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.6);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .help-status {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .agent {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .agent.active {
+            background: rgba(0, 122, 255, 0.15);
+            border-color: rgba(0, 122, 255, 0.4);
+        }
+
+        .agent.thinking {
+            background: rgba(255, 204, 0, 0.15);
+            border-color: rgba(255, 204, 0, 0.4);
+        }
+
+        .agent.complete {
+            background: rgba(52, 199, 89, 0.15);
+            border-color: rgba(52, 199, 89, 0.4);
+        }
+
+        .agent-icon {
+            font-size: 28px;
+        }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .agent-status {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .agent.active .agent-status {
+            color: #007AFF;
+        }
+
+        .agent.thinking .agent-status {
+            color: #FFCC00;
+        }
+
+        .agent.complete .agent-status {
+            color: #34C759;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="earth-bg"></div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>AI to help you find</h1>
+            <div class="roll-wrap">
+                <div class="roll">
+                    <div>Tradie</div>
+                    <div>Plumber</div>
+                    <div>Electrician</div>
+                    <div>Roofer</div>
+                    <div>Builder</div>
+                    <div>Tradie</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-window">
+            <div class="messages" id="messages"></div>
+            <div class="chat-input">
+                <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                <button class="camera-btn" id="cameraBtn">
+                    <div class="camera-icon">📷</div>
+                </button>
+                <input type="text" class="input-field" id="textInput" placeholder="Type your emergency...">
+                <button class="mic-btn" id="mic">
+                    <div class="mic-icon">🎤</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <div class="panel">
+                <h2>🗺️ Live Tracking</h2>
+                <div class="map-container" id="map">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📍</div>
+                        <div>Waiting for location...</div>
+                    </div>
+                </div>
+                <div class="help-status" id="helpStatus"></div>
+            </div>
+
+            <div class="panel">
+                <h2>🤖 AI Agents</h2>
+                <div class="agents-grid">
+                    <div class="agent" id="agent-carly">
+                        <div class="agent-icon">💬</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Carly AI</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-empathy">
+                        <div class="agent-icon">💙</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Empathy</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-vision">
+                        <div class="agent-icon">👁️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Vision</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-haggler">
+                        <div class="agent-icon">💼</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Haggler</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-finance">
+                        <div class="agent-icon">💳</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Finance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-phone">
+                        <div class="agent-icon">📞</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Phone</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-diy">
+                        <div class="agent-icon">🛠️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">DIY</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-insurance">
+                        <div class="agent-icon">📋</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Insurance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let id = null;
+        let rec = null;
+        let on = false;
+        const io = window.io('http://localhost:5000');
+
+        if ('webkitSpeechRecognition' in window) {
+            rec = new webkitSpeechRecognition();
+            rec.continuous = false;
+            rec.lang = 'en-AU';
+        }
+
+        document.getElementById('cameraBtn').onclick = () => {
+            document.getElementById('photoInput').click();
+        };
+
+        document.getElementById('photoInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            msg('u', '📷 Photo uploaded');
+            setAgent('vision', 'thinking');
+
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('claim_id', id);
+
+            try {
+                const r = await fetch('/api/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const d = await r.json();
+                if (d.success) {
+                    setAgent('vision', 'complete');
+                    msg('c', 'Got it! Analyzing your photo now...');
+                    speak('Got it! Analyzing your photo now.');
+                    setTimeout(() => find(), 2000);
+                }
+            } catch (err) {
+                console.error('Photo upload error:', err);
+                msg('c', 'Had trouble with the photo. Can you try again?');
+            }
+        };
+
+        document.getElementById('mic').onclick = () => {
+            if (!rec) {
+                alert('Chrome only');
+                return;
+            }
+
+            if (on) {
+                rec.stop();
+                on = false;
+                document.getElementById('mic').classList.remove('on');
+            } else {
+                rec.start();
+                on = true;
+                document.getElementById('mic').classList.add('on');
+            }
+        };
+
+        rec.onresult = async (e) => {
+            const txt = e.results[0][0].transcript;
+            msg('u', txt);
+            rec.stop();
+            on = false;
+            document.getElementById('mic').classList.remove('on');
+            await send(txt);
+        };
+
+        document.getElementById('textInput').onkeypress = async (e) => {
+            if (e.key === 'Enter') {
+                const txt = e.target.value.trim();
+                if (txt) {
+                    msg('u', txt);
+                    e.target.value = '';
+                    await send(txt);
+                }
+            }
+        };
+
+        async function send(txt) {
+            setAgent('carly', 'thinking');
+            
+            const r = await fetch('/api/carly-chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: txt, claim_id: id})
+            });
+            
+            const d = await r.json();
+            if (d.success) {
+                id = d.claim_id;
+                msg('c', d.carly_response);
+                speak(d.carly_response);
+                setAgent('carly', 'active');
+                
+                if (d.ready_for_tradie && d.claim_data.has_photo) {
+                    setTimeout(() => find(), 2000);
+                }
+            }
+        }
+
+        function msg(who, txt) {
+            const m = document.createElement('div');
+            m.className = `msg ${who}`;
+            m.innerHTML = `<div class="bubble">${txt}</div>`;
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.appendChild(m);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function speak(txt) {
+            const u = new SpeechSynthesisUtterance(txt);
+            u.lang = 'en-AU';
+            u.rate = 1.0;
+            u.pitch = 1.1;
+            speechSynthesis.speak(u);
+        }
+
+        function setAgent(name, status) {
+            const agent = document.getElementById(`agent-${name}`);
+            if (!agent) return;
+            
+            agent.classList.remove('active', 'thinking', 'complete');
+            const statusEl = agent.querySelector('.agent-status');
+            
+            if (status === 'active') {
+                agent.classList.add('active');
+                statusEl.textContent = 'Active';
+            } else if (status === 'thinking') {
+                agent.classList.add('thinking');
+                statusEl.textContent = 'Thinking...';
+            } else if (status === 'complete') {
+                agent.classList.add('complete');
+                statusEl.textContent = 'Complete';
+            } else {
+                statusEl.textContent = 'Idle';
+            }
+        }
+
+        async function find() {
+            setAgent('vision', 'thinking');
+            setAgent('haggler', 'thinking');
+            
+            const r = await fetch('/api/find-tradies', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({claim_id: id})
+            });
+            const d = await r.json();
+            
+            if (d.success) {
+                setAgent('vision', 'complete');
+                setAgent('haggler', 'active');
+                speak(`Found ${d.tradies.length} ${d.trade_type}s. Calling now.`);
+                setTimeout(() => call(0), 2000);
+            }
+        }
+
+        async function call(idx) {
+            setAgent('phone', 'thinking');
+            
+            const r = await fetch('/api/call-tradie', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({claim_id: id, tradie_index: idx})
+            });
+            const d = await r.json();
+            
+            if (d.success) {
+                setAgent('phone', 'active');
+                speak('Making real phone call now.');
+                showMap();
+            }
+        }
+
+        function showMap() {
+            const map = document.getElementById('map');
+            map.innerHTML = `<div class="map-marker">🚗</div>`;
+            document.getElementById('helpStatus').textContent = '✓ Help is on the way!';
+        }
+
+        io.on('call_update', (d) => {
+            if (d.status === 'completed') {
+                setAgent('phone', 'complete');
+                setAgent('finance', 'active');
+                speak('Tradie confirmed! Arriving in 20 minutes.');
+            }
+        });
+
+        window.onload = () => {
+            setTimeout(() => {
+                const g = "Hi! I'm Carly. What's your emergency?";
+                msg('c', g);
+                speak(g);
+                setAgent('carly', 'active');
+            }, 1000);
+        };
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carly - AI Emergency Assistant</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background: #000;
+        }
+
+        .earth-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-image: url('bg.PNG');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+        }
+
+        .earth-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 20px 40px;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+            padding: 0 20px;
+        }
+
+        .hero-title {
+            font-size: 85px;
+            font-weight: 900;
+            letter-spacing: -4px;
+            line-height: 1;
+            text-transform: uppercase;
+            margin-bottom: 0;
+        }
+
+        .hero-subtitle {
+            font-size: 85px;
+            font-weight: 900;
+            letter-spacing: -4px;
+            line-height: 1.1;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .roll-wrap {
+            height: 100px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .roll {
+            animation: roll 10s infinite;
+        }
+
+        .roll div {
+            height: 100px;
+            line-height: 100px;
+            font-size: 85px;
+            font-weight: 900;
+            letter-spacing: -4px;
+        }
+
+        @keyframes roll {
+            0%, 18% { transform: translateY(0); }
+            20%, 38% { transform: translateY(-100px); }
+            40%, 58% { transform: translateY(-200px); }
+            60%, 78% { transform: translateY(-300px); }
+            80%, 98% { transform: translateY(-400px); }
+            100% { transform: translateY(0); }
+        }
+
+        .chat-window {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            height: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            margin-bottom: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            padding-bottom: 20px;
+        }
+
+        .chat-input {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .camera-btn {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .camera-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: scale(1.05);
+        }
+
+        .camera-icon {
+            font-size: 24px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 14px 20px;
+            color: white;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .mic-btn {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mic-btn.on {
+            background: linear-gradient(135deg, #FF3B30, #C7001E);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 59, 48, 0); }
+        }
+
+        .mic-icon {
+            font-size: 24px;
+        }
+
+        .msg {
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg.c {
+            text-align: left;
+        }
+
+        .msg.u {
+            text-align: right;
+        }
+
+        .bubble {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 70%;
+            color: white;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .msg.c .bubble {
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .msg.u .bubble {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            min-height: 400px;
+        }
+
+        .panel h2 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.6);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .help-status {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .agent {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .agent.active {
+            background: rgba(0, 122, 255, 0.15);
+            border-color: rgba(0, 122, 255, 0.4);
+        }
+
+        .agent.thinking {
+            background: rgba(255, 204, 0, 0.15);
+            border-color: rgba(255, 204, 0, 0.4);
+        }
+
+        .agent.complete {
+            background: rgba(52, 199, 89, 0.15);
+            border-color: rgba(52, 199, 89, 0.4);
+        }
+
+        .agent-icon {
+            font-size: 28px;
+        }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .agent-status {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .agent.active .agent-status {
+            color: #007AFF;
+        }
+
+        .agent.thinking .agent-status {
+            color: #FFCC00;
+        }
+
+        .agent.complete .agent-status {
+            color: #34C759;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-title, .hero-subtitle, .roll div {
+                font-size: 60px;
+            }
+            
+            .roll-wrap {
+                height: 70px;
+            }
+            
+            .roll div {
+                height: 70px;
+                line-height: 70px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-title, .hero-subtitle, .roll div {
+                font-size: 45px;
+            }
+            
+            .roll-wrap {
+                height: 55px;
+            }
+            
+            .roll div {
+                height: 55px;
+                line-height: 55px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="earth-bg"></div>
+
+    <div class="container">
+        <div class="hero">
+            <div class="hero-title">AI TO HELP YOU FIND</div>
+            <div class="hero-subtitle">
+                <div class="roll-wrap">
+                    <div class="roll">
+                        <div>TRADIE</div>
+                        <div>PLUMBER</div>
+                        <div>ELECTRICIAN</div>
+                        <div>ROOFER</div>
+                        <div>BUILDER</div>
+                        <div>TRADIE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-window">
+            <div class="messages" id="messages"></div>
+            <div class="chat-input">
+                <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                <button class="camera-btn" id="cameraBtn">
+                    <div class="camera-icon">📷</div>
+                </button>
+                <input type="text" class="input-field" id="textInput" placeholder="Type your emergency...">
+                <button class="mic-btn" id="mic">
+                    <div class="mic-icon">🎤</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <div class="panel">
+                <h2>🗺️ Live Tracking</h2>
+                <div class="map-container" id="map">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📍</div>
+                        <div>Waiting for location...</div>
+                    </div>
+                </div>
+                <div class="help-status" id="helpStatus"></div>
+            </div>
+
+            <div class="panel">
+                <h2>🤖 AI Agents</h2>
+                <div class="agents-grid">
+                    <div class="agent" id="agent-carly">
+                        <div class="agent-icon">💬</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Carly AI</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-empathy">
+                        <div class="agent-icon">💙</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Empathy</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-vision">
+                        <div class="agent-icon">👁️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Vision</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-haggler">
+                        <div class="agent-icon">💼</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Haggler</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-finance">
+                        <div class="agent-icon">💳</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Finance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-phone">
+                        <div class="agent-icon">📞</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Phone</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-diy">
+                        <div class="agent-icon">🛠️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">DIY</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-insurance">
+                        <div class="agent-icon">📋</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Insurance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let id = null;
+        let rec = null;
+        let on = false;
+        const io = window.io('http://localhost:5000');
+
+        if ('webkitSpeechRecognition' in window) {
+            rec = new webkitSpeechRecognition();
+            rec.continuous = false;
+            rec.lang = 'en-AU';
+        }
+
+        document.getElementById('cameraBtn').onclick = () => {
+            document.getElementById('photoInput').click();
+        };
+
+        document.getElementById('photoInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            msg('u', '📷 Photo uploaded');
+            setAgent('vision', 'thinking');
+
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('claim_id', id);
+
+            try {
+                const r = await fetch('/api/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const d = await r.json();
+                if (d.success) {
+                    setAgent('vision', 'complete');
+                    msg('c', 'Got it! Analyzing your photo now...');
+                    speak('Got it! Analyzing your photo now.');
+                    setTimeout(() => find(), 2000);
+                }
+            } catch (err) {
+                console.error('Photo upload error:', err);
+                msg('c', 'Had trouble with the photo. Can you try again?');
+            }
+        };
+
+        document.getElementById('mic').onclick = () => {
+            if (!rec) {
+                alert('Chrome only');
+                return;
+            }
+
+            if (on) {
+                rec.stop();
+                on = false;
+                document.getElementById('mic').classList.remove('on');
+            } else {
+                rec.start();
+                on = true;
+                document.getElementById('mic').classList.add('on');
+            }
+        };
+
+        rec.onresult = async (e) => {
+            const txt = e.results[0][0].transcript;
+            msg('u', txt);
+            rec.stop();
+            on = false;
+            document.getElementById('mic').classList.remove('on');
+            await send(txt);
+        };
+
+        document.getElementById('textInput').onkeypress = async (e) => {
+            if (e.key === 'Enter') {
+                const txt = e.target.value.trim();
+                if (txt) {
+                    msg('u', txt);
+                    e.target.value = '';
+                    await send(txt);
+                }
+            }
+        };
+
+        async function send(txt) {
+            setAgent('carly', 'thinking');
+            
+            const r = await fetch('/api/carly-chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: txt, claim_id: id})
+            });
+            
+            const d = await r.json();
+            if (d.success) {
+                id = d.claim_id;
+                msg('c', d.carly_response);
+                speak(d.carly_response);
+                setAgent('carly', 'active');
+                
+                if (d.ready_for_tradie && d.claim_data.has_photo) {
+                    setTimeout(() => find(), 2000);
+                }
+            }
+        }
+
+        function msg(who, txt) {
+            const m = document.createElement('div');
+            m.className = `msg ${who}`;
+            m.innerHTML = `<div class="bubble">${txt}</div>`;
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.appendChild(m);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function speak(txt) {
+            const u = new SpeechSynthesisUtterance(txt);
+            u.lang = 'en-AU';
+            u.rate = 1.0;
+            u.pitch = 1.1;
+            speechSynthesis.speak(u);
+        }
+
+        function setAgent(name, status) {
+            const agent = document.getElementById(`agent-${name}`);
+            if (!agent) return;
+            
+            agent.classList.remove('active', 'thinking', 'complete');
+            const statusEl = agent.querySelector('.agent-status');
+            
+            if (status === 'active') {
+                agent.classList.add('active');
+                statusEl.textContent = 'Active';
+            } else if (status === 'thinking') {
+                agent.classList.add('thinking');
+                statusEl.textContent = 'Thinking...';
+            } else if (status === 'complete') {
+                agent.classList.add('complete');
+                statusEl.textContent = 'Complete';
+            } else {
+                statusEl.textContent = 'Idle';
+            }
+        }
+
+        async function find() {
+            setAgent('vision', 'thinking');
+            setAgent('haggler', 'thinking');
+            
+            const r = await fetch('/api/find-tradies', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({claim_id: id})
+            });
+            const d = await r.json();
+            
+            if (d.success) {
+                setAgent('vision', 'complete');
+                setAgent('haggler', 'active');
+                speak(`Found ${d.tradies.length} ${d.trade_type}s. Calling now.`);
+                setTimeout(() => call(0), 2000);
+            }
+        }
+
+        async function call(idx) {
+            setAgent('phone', 'thinking');
+            
+            const r = await fetch('/api/call-tradie', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({claim_id: id, tradie_index: idx})
+            });
+            const d = await r.json();
+            
+            if (d.success) {
+                setAgent('phone', 'active');
+                speak('Making real phone call now.');
+                showMap();
+            }
+        }
+
+        function showMap() {
+            const map = document.getElementById('map');
+            map.innerHTML = `<div class="map-marker">🚗</div>`;
+            document.getElementById('helpStatus').textContent = '✓ Help is on the way!';
+        }
+
+        io.on('call_update', (d) => {
+            if (d.status === 'completed') {
+                setAgent('phone', 'complete');
+                setAgent('finance', 'active');
+                speak('Tradie confirmed! Arriving in 20 minutes.');
+            }
+        });
+
+        window.onload = () => {
+            setTimeout(() => {
+                const g = "Hi! I'm Carly. What's your emergency?";
+                msg('c', g);
+                speak(g);
+                setAgent('carly', 'active');
+            }, 1000);
+        };
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carly - AI Emergency Assistant</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background: #000;
+        }
+
+        .earth-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-image: url('bg.PNG');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+        }
+
+        .earth-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 20px 40px;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+            padding: 0 20px;
+        }
+
+        .hero-title {
+            font-size: 85px;
+            font-weight: 900;
+            letter-spacing: -4px;
+            line-height: 1;
+            text-transform: uppercase;
+            margin-bottom: 0;
+        }
+
+        .hero-subtitle {
+            font-size: 85px;
+            font-weight: 900;
+            letter-spacing: -4px;
+            line-height: 1.1;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .roll-wrap {
+            height: 100px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .roll {
+            animation: roll 10s infinite;
+        }
+
+        .roll div {
+            height: 100px;
+            line-height: 100px;
+            font-size: 85px;
+            font-weight: 900;
+            letter-spacing: -4px;
+        }
+
+        @keyframes roll {
+            0%, 18% { transform: translateY(0); }
+            20%, 38% { transform: translateY(-100px); }
+            40%, 58% { transform: translateY(-200px); }
+            60%, 78% { transform: translateY(-300px); }
+            80%, 98% { transform: translateY(-400px); }
+            100% { transform: translateY(0); }
+        }
+
+        .chat-window {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            height: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            margin-bottom: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            padding-bottom: 20px;
+        }
+
+        .chat-input {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .camera-btn {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .camera-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: scale(1.05);
+        }
+
+        .camera-icon {
+            font-size: 24px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 14px 20px;
+            color: white;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .mic-btn {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mic-btn.on {
+            background: linear-gradient(135deg, #FF3B30, #C7001E);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 59, 48, 0); }
+        }
+
+        .mic-icon {
+            font-size: 24px;
+        }
+
+        .msg {
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg.c {
+            text-align: left;
+        }
+
+        .msg.u {
+            text-align: right;
+        }
+
+        .bubble {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 70%;
+            color: white;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .msg.c .bubble {
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .msg.u .bubble {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            min-height: 400px;
+        }
+
+        .panel h2 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.6);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .help-status {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .agent {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .agent.active {
+            background: rgba(0, 122, 255, 0.15);
+            border-color: rgba(0, 122, 255, 0.4);
+        }
+
+        .agent.thinking {
+            background: rgba(255, 204, 0, 0.15);
+            border-color: rgba(255, 204, 0, 0.4);
+        }
+
+        .agent.complete {
+            background: rgba(52, 199, 89, 0.15);
+            border-color: rgba(52, 199, 89, 0.4);
+        }
+
+        .agent-icon {
+            font-size: 28px;
+        }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .agent-status {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .agent.active .agent-status {
+            color: #007AFF;
+        }
+
+        .agent.thinking .agent-status {
+            color: #FFCC00;
+        }
+
+        .agent.complete .agent-status {
+            color: #34C759;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-title, .hero-subtitle, .roll div {
+                font-size: 60px;
+            }
+            
+            .roll-wrap {
+                height: 70px;
+            }
+            
+            .roll div {
+                height: 70px;
+                line-height: 70px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-title, .hero-subtitle, .roll div {
+                font-size: 45px;
+            }
+            
+            .roll-wrap {
+                height: 55px;
+            }
+            
+            .roll div {
+                height: 55px;
+                line-height: 55px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="earth-bg"></div>
+
+    <div class="container">
+        <div class="hero">
+            <div class="hero-title">AI TO HELP YOU FIND</div>
+            <div class="hero-subtitle">
+                <div class="roll-wrap">
+                    <div class="roll">
+                        <div>TRADIE</div>
+                        <div>PLUMBER</div>
+                        <div>ELECTRICIAN</div>
+                        <div>ROOFER</div>
+                        <div>BUILDER</div>
+                        <div>TRADIE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-window">
+            <div class="messages" id="messages"></div>
+            <div class="chat-input">
+                <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                <button class="camera-btn" id="cameraBtn">
+                    <div class="camera-icon">📷</div>
+                </button>
+                <input type="text" class="input-field" id="textInput" placeholder="Type your emergency...">
+                <button class="mic-btn" id="mic">
+                    <div class="mic-icon">🎤</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <div class="panel">
+                <h2>🗺️ Live Tracking</h2>
+                <div class="map-container" id="map">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📍</div>
+                        <div>Waiting for location...</div>
+                    </div>
+                </div>
+                <div class="help-status" id="helpStatus"></div>
+            </div>
+
+            <div class="panel">
+                <h2>🤖 AI Agents</h2>
+                <div class="agents-grid">
+                    <div class="agent" id="agent-carly">
+                        <div class="agent-icon">💬</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Carly AI</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-empathy">
+                        <div class="agent-icon">💙</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Empathy</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-vision">
+                        <div class="agent-icon">👁️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Vision</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-haggler">
+                        <div class="agent-icon">💼</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Haggler</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-finance">
+                        <div class="agent-icon">💳</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Finance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-phone">
+                        <div class="agent-icon">📞</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Phone</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-diy">
+                        <div class="agent-icon">🛠️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">DIY</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-insurance">
+                        <div class="agent-icon">📋</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Insurance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let id = null;
+        let rec = null;
+        let on = false;
+        const io = window.io('http://localhost:5000');
+
+        if ('webkitSpeechRecognition' in window) {
+            rec = new webkitSpeechRecognition();
+            rec.continuous = false;
+            rec.lang = 'en-AU';
+        }
+
+        document.getElementById('cameraBtn').onclick = () => {
+            document.getElementById('photoInput').click();
+        };
+
+        document.getElementById('photoInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            msg('u', '📷 Photo uploaded');
+            setAgent('vision', 'thinking');
+
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('claim_id', id);
+
+            try {
+                const r = await fetch('/api/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const d = await r.json();
+                if (d.success) {
+                    setAgent('vision', 'complete');
+                    msg('c', 'Got it! Analyzing your photo now...');
+                    speak('Got it! Analyzing your photo now.');
+                    setTimeout(() => find(), 2000);
+                }
+            } catch (err) {
+                console.error('Photo upload error:', err);
+                msg('c', 'Had trouble with the photo. Can you try again?');
+            }
+        };
+
+        document.getElementById('mic').onclick = () => {
+            if (!rec) {
+                alert('Chrome only');
+                return;
+            }
+
+            if (on) {
+                rec.stop();
+                on = false;
+                document.getElementById('mic').classList.remove('on');
+            } else {
+                rec.start();
+                on = true;
+                document.getElementById('mic').classList.add('on');
+            }
+        };
+
+        rec.onresult = async (e) => {
+            const txt = e.results[0][0].transcript;
+            msg('u', txt);
+            rec.stop();
+            on = false;
+            document.getElementById('mic').classList.remove('on');
+            await send(txt);
+        };
+
+        document.getElementById('textInput').onkeypress = async (e) => {
+            if (e.key === 'Enter') {
+                const txt = e.target.value.trim();
+                if (txt) {
+                    msg('u', txt);
+                    e.target.value = '';
+                    await send(txt);
+                }
+            }
+        };
+
+        async function send(txt) {
+            setAgent('carly', 'thinking');
+            
+            const r = await fetch('/api/carly-chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: txt, claim_id: id})
+            });
+            
+            const d = await r.json();
+            if (d.success) {
+                id = d.claim_id;
+                msg('c', d.carly_response);
+                speak(d.carly_response);
+                setAgent('carly', 'active');
+                
+                if (d.ready_for_tradie && d.claim_data.has_photo) {
+                    setTimeout(() => find(), 2000);
+                }
+            }
+        }
+
+        function msg(who, txt) {
+            const m = document.createElement('div');
+            m.className = `msg ${who}`;
+            m.innerHTML = `<div class="bubble">${txt}</div>`;
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.appendChild(m);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function speak(txt) {
+            const u = new SpeechSynthesisUtterance(txt);
+            u.lang = 'en-AU';
+            u.rate = 1.0;
+            u.pitch = 1.1;
+            speechSynthesis.speak(u);
+        }
+
+        function setAgent(name, status) {
+            const agent = document.getElementById(`agent-${name}`);
+            if (!agent) return;
+            
+            agent.classList.remove('active', 'thinking', 'complete');
+            const statusEl = agent.querySelector('.agent-status');
+            
+            if (status === 'active') {
+                agent.classList.add('active');
+                statusEl.textContent = 'Active';
+            } else if (status === 'thinking') {
+                agent.classList.add('thinking');
+                statusEl.textContent = 'Thinking...';
+            } else if (status === 'complete') {
+                agent.classList.add('complete');
+                statusEl.textContent = 'Complete';
+            } else {
+                statusEl.textContent = 'Idle';
+            }
+        }
+
+        async function find() {
+            setAgent('vision', 'thinking');
+            setAgent('haggler', 'thinking');
+            
+            const r = await fetch('/api/find-tradies', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({claim_id: id})
+            });
+            const d = await r.json();
+            
+            if (d.success) {
+                setAgent('vision', 'complete');
+                setAgent('haggler', 'active');
+                speak(`Found ${d.tradies.length} ${d.trade_type}s. Calling now.`);
+                setTimeout(() => call(0), 2000);
+            }
+        }
+
+        async function call(idx) {
+            setAgent('phone', 'thinking');
+            
+            const r = await fetch('/api/call-tradie', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({claim_id: id, tradie_index: idx})
+            });
+            const d = await r.json();
+            
+            if (d.success) {
+                setAgent('phone', 'active');
+                speak('Making real phone call now.');
+                showMap();
+            }
+        }
+
+        function showMap() {
+            const map = document.getElementById('map');
+            map.innerHTML = `<div class="map-marker">🚗</div>`;
+            document.getElementById('helpStatus').textContent = '✓ Help is on the way!';
+        }
+
+        io.on('call_update', (d) => {
+            if (d.status === 'completed') {
+                setAgent('phone', 'complete');
+                setAgent('finance', 'active');
+                speak('Tradie confirmed! Arriving in 20 minutes.');
+            }
+        });
+
+        window.onload = () => {
+            setTimeout(() => {
+                const g = "Hi! I'm Carly. What's your emergency?";
+                msg('c', g);
+                speak(g);
+                setAgent('carly', 'active');
+            }, 1000);
+        };
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+ -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carly - AI Emergency Assistant</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background: #000;
+        }
+
+        .earth-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-image: url('bg.PNG');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+        }
+
+        .earth-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 20px 40px;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+            padding: 0 20px;
+        }
+
+        .hero-title {
+            font-size: 85px;
+            font-weight: 900;
+            letter-spacing: -4px;
+            line-height: 1;
+            text-transform: uppercase;
+            margin-bottom: 0;
+        }
+
+        .hero-subtitle {
+            font-size: 85px;
+            font-weight: 900;
+            letter-spacing: -4px;
+            line-height: 1.1;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .roll-wrap {
+            height: 100px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .roll {
+            animation: roll 10s infinite;
+        }
+
+        .roll div {
+            height: 100px;
+            line-height: 100px;
+            font-size: 85px;
+            font-weight: 900;
+            letter-spacing: -4px;
+        }
+
+        @keyframes roll {
+            0%, 18% { transform: translateY(0); }
+            20%, 38% { transform: translateY(-100px); }
+            40%, 58% { transform: translateY(-200px); }
+            60%, 78% { transform: translateY(-300px); }
+            80%, 98% { transform: translateY(-400px); }
+            100% { transform: translateY(0); }
+        }
+
+        .chat-window {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            height: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            margin-bottom: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            padding-bottom: 20px;
+        }
+
+        .chat-input {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .camera-btn {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .camera-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: scale(1.05);
+        }
+
+        .camera-icon {
+            font-size: 24px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 14px 20px;
+            color: white;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .mic-btn {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mic-btn.on {
+            background: linear-gradient(135deg, #FF3B30, #C7001E);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 59, 48, 0); }
+        }
+
+        .mic-icon {
+            font-size: 24px;
+        }
+
+        .msg {
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg.c {
+            text-align: left;
+        }
+
+        .msg.u {
+            text-align: right;
+        }
+
+        .bubble {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 70%;
+            color: white;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .msg.c .bubble {
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .msg.u .bubble {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .msg.system .bubble {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-left: 4px solid gold;
+        }
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .ux-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .panel h2 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #007AFF, #0051D5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.6);
+            animation: bounce 2s infinite;
+            bottom: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, -50%); }
+            50% { transform: translate(-50%, -70px); }
+        }
+
+        .help-status {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .agent {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .agent.active {
+            background: rgba(0, 122, 255, 0.15);
+            border-color: rgba(0, 122, 255, 0.4);
+        }
+
+        .agent.thinking {
+            background: rgba(255, 204, 0, 0.15);
+            border-color: rgba(255, 204, 0, 0.4);
+        }
+
+        .agent.complete {
+            background: rgba(52, 199, 89, 0.15);
+            border-color: rgba(52, 199, 89, 0.4);
+        }
+
+        .agent-icon {
+            font-size: 28px;
+        }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .agent-status {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .agent.active .agent-status {
+            color: #007AFF;
+        }
+
+        .agent.thinking .agent-status {
+            color: #FFCC00;
+        }
+
+        .agent.complete .agent-status {
+            color: #34C759;
+        }
+
+        /* New UX Panel Styles */
+        .intent-preview {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .intent-header {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .intent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .intent-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .intent-check {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .intent-check.completed {
+            background: #34C759;
+        }
+
+        .intent-check.active {
+            background: #007AFF;
+            animation: pulse 1.5s infinite;
+        }
+
+        .intent-content {
+            flex: 1;
+        }
+
+        .intent-title {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .intent-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+        }
+
+        .reasoning-panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .reasoning-header {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reasoning-feed {
+            max-height: 150px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .reasoning-item {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #8b5cf6;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            color: white;
+            font-size: 13px;
+        }
+
+        .reasoning-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .reasoning-because {
+            color: #8b5cf6;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .confidence-meter {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .confidence-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f59e0b, #34C759);
+            border-radius: 5px;
+            transition: width 0.5s;
+        }
+
+        .confidence-prompt {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            padding: 10px;
+            background: rgba(255, 204, 0, 0.15);
+            border-left: 4px solid #FFCC00;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .tracking-info {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 20px;
+            margin-top: 20px;
+            color: white;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #34C759;
+            width: 0%;
+            transition: width 1s linear;
+        }
+
+        .stores-container {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .store-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .store-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .store-details {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .tool-item {
+            font-size: 12px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tool-item:last-child {
+            border-bottom: none;
+        }
+
+        .tool-price {
+            color: #34C759;
+            font-weight: 600;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 1200px) {
+            .ux-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .bottom-grid, .ux-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-title, .hero-subtitle, .roll div {
+                font-size: 60px;
+            }
+            
+            .roll-wrap {
+                height: 70px;
+            }
+            
+            .roll div {
+                height: 70px;
+                line-height: 70px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-title, .hero-subtitle, .roll div {
+                font-size: 45px;
+            }
+            
+            .roll-wrap {
+                height: 55px;
+            }
+            
+            .roll div {
+                height: 55px;
+                line-height: 55px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="earth-bg"></div>
+
+    <div class="container">
+        <div class="hero">
+            <div class="hero-title">AI TO HELP YOU FIND</div>
+            <div class="hero-subtitle">
+                <div class="roll-wrap">
+                    <div class="roll">
+                        <div>TRADIE</div>
+                        <div>PLUMBER</div>
+                        <div>ELECTRICIAN</div>
+                        <div>ROOFER</div>
+                        <div>BUILDER</div>
+                        <div>TRADIE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-window">
+            <div class="messages" id="messages"></div>
+            <div class="chat-input">
+                <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                <button class="camera-btn" id="cameraBtn">
+                    <div class="camera-icon">📷</div>
+                </button>
+                <input type="text" class="input-field" id="textInput" placeholder="Type your emergency...">
+                <button class="mic-btn" id="mic">
+                    <div class="mic-icon">🎤</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <div class="panel">
+                <h2>🗺️ Live Tracking</h2>
+                <div class="map-container" id="map">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📍</div>
+                        <div>Waiting for location...</div>
+                    </div>
+                </div>
+                <div class="help-status" id="helpStatus"></div>
+                
+                <!-- Tracking Info (hidden by default) -->
+                <div class="tracking-info" id="trackingInfo" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span id="tradieName">Tradie</span>
+                        <span id="tradieETA">ETA: 15 min</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 12px; opacity: 0.7;" id="tradieMessage">On the way!</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>🤖 AI Agents</h2>
+                <div class="agents-grid">
+                    <div class="agent" id="agent-carly">
+                        <div class="agent-icon">💬</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Carly AI</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-empathy">
+                        <div class="agent-icon">💙</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Empathy</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-vision">
+                        <div class="agent-icon">👁️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Vision</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-haggler">
+                        <div class="agent-icon">💼</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Haggler</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-finance">
+                        <div class="agent-icon">💳</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Finance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-phone">
+                        <div class="agent-icon">📞</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Phone</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-diy">
+                        <div class="agent-icon">🛠️</div>
+                        <div class="agent-info">
+                            <div class="agent-name">DIY</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                    <div class="agent" id="agent-insurance">
+                        <div class="agent-icon">📋</div>
+                        <div class="agent-info">
+                            <div class="agent-name">Insurance</div>
+                            <div class="agent-status">Idle</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New UX Panels (hidden until needed) -->
+        <div class="ux-grid" id="uxPanels" style="display: none;">
+            <!-- Intent Preview -->
+            <div class="intent-preview">
+                <div class="intent-header">
+                    <span>🔍 Action Plan</span>
+                </div>
+                <div class="intent-list" id="intentList">
+                    <div class="intent-item" id="intent1">
+                        <div class="intent-check completed" id="check1">✓</div>
+                        <div class="intent-content">
+                            <div class="intent-title">Assess Emergency</div>
+                            <div class="intent-desc">Gathering details about your situation</div>
+                        </div>
+                    </div>
+                    <div class="intent-item" id="intent2">
+                        <div class="intent-check" id="check2">2</div>
+                        <div class="intent-content">
+                            <div class="intent-title">Find Local Help</div>
+                            <div class="intent-desc">Searching for available professionals</div>
+                        </div>
+                    </div>
+                    <div class="intent-item" id="intent3">
+                        <div class="intent-check" id="check3">3</div>
+                        <div class="intent-content">
+                            <div class="intent-title">Dispatch & Track</div>
+                            <div class="intent-desc">Will send help with real-time updates</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Reasoning -->
+            <div class="reasoning-panel">
+                <div class="reasoning-header">
+                    <span>🧠 Agent Reasoning</span>
+                </div>
+                <div class="reasoning-feed" id="reasoningFeed">
+                    <div class="reasoning-item">
+                        <span class="reasoning-because">Because</span> you said "roof leaking", I'm prioritizing water damage assessment
+                    </div>
+                    <div class="reasoning-item">
+                        <span class="reasoning-because">Because</span> the first plumber is 45 mins away and water pressure is rising, I'm now checking for local 'Make-Safe' kit at Bunnings
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confidence Meter -->
+            <div class="confidence-meter" id="confidenceMeter" style="display: none;">
+                <div class="confidence-label">
+                    <span>Diagnosis Confidence</span>
+                    <span id="confidencePercent">92%</span>
+                </div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="confidenceFill" style="width: 92%"></div>
+                </div>
+                <div class="confidence-prompt" id="confidencePrompt">
+                    ⚠️ I'm only 40% sure of this leak source. Please take a photo of the baseboard so I can confirm.
+                </div>
+            </div>
+
+            <!-- Stores Container (for DIY options) -->
+            <div class="intent-preview" id="storesPanel" style="display: none;">
+                <div class="intent-header">
+                    <span>🏪 Nearby Stores</span>
+                </div>
+                <div class="stores-container" id="storesContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let id = null;
+        let rec = null;
+        let on = false;
+        let trackingInterval = null;
+        let currentTrackingId = null;
+        const io = window.io('http://localhost:5000');
+
+        // Google API Key (will be loaded from server)
+        window.GOOGLE_API_KEY = null;
+
+        // Fetch config on load
+        fetch('/api/config')
+            .then(res => res.json())
+            .then(data => {
+                window.GOOGLE_API_KEY = data.GOOGLE_API_KEY;
+                console.log('✅ Config loaded:', window.GOOGLE_API_KEY ? 'API key present' : 'No API key');
+            })
+            .catch(err => console.error('Failed to load config:', err));
+
+        if ('webkitSpeechRecognition' in window) {
+            rec = new webkitSpeechRecognition();
+            rec.continuous = false;
+            rec.lang = 'en-AU';
+        }
+
+        document.getElementById('cameraBtn').onclick = () => {
+            document.getElementById('photoInput').click();
+        };
+
+        document.getElementById('photoInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            msg('u', '📷 Photo uploaded');
+            setAgent('vision', 'thinking');
+            showUXPanels();
+
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('claim_id', id);
+
+            try {
+                const r = await fetch('/api/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const d = await r.json();
+                if (d.success) {
+                    setAgent('vision', 'complete');
+                    msg('c', d.message || 'Got it! Analyzing your photo now...');
+                    speak('Got it! Analyzing your photo now.');
+                    
+                    if (d.analysis) {
+                        addReasoning(`Based on the photo analysis, this appears to be a ${d.analysis.trade} issue.`);
+                        
+                        if (d.analysis.needs_professional) {
+                            addReasoning(`Because the damage appears severe, I'm recommending a professional ${d.analysis.trade}.`);
+                        } else {
+                            addReasoning(`The damage appears minor enough for DIY repair. Showing required tools.`);
+                        }
+                    }
+                    
+                    if (d.nearby_stores && d.nearby_stores.length > 0) {
+                        showStores(d.nearby_stores, d.analysis?.diy_tools);
+                    }
+                }
+            } catch (err) {
+                console.error('Photo upload error:', err);
+                msg('c', 'Had trouble with the photo. Can you try again?');
+            }
+        };
+
+        document.getElementById('mic').onclick = () => {
+            if (!rec) {
+                alert('Chrome only');
+                return;
+            }
+
+            if (on) {
+                rec.stop();
+                on = false;
+                document.getElementById('mic').classList.remove('on');
+            } else {
+                rec.start();
+                on = true;
+                document.getElementById('mic').classList.add('on');
+            }
+        };
+
+        rec.onresult = async (e) => {
+            const txt = e.results[0][0].transcript;
+            msg('u', txt);
+            rec.stop();
+            on = false;
+            document.getElementById('mic').classList.remove('on');
+            await send(txt);
+        };
+
+        document.getElementById('textInput').onkeypress = async (e) => {
+            if (e.key === 'Enter') {
+                const txt = e.target.value.trim();
+                if (txt) {
+                    msg('u', txt);
+                    e.target.value = '';
+                    await send(txt);
+                }
+            }
+        };
+
+        async function send(txt) {
+            setAgent('carly', 'thinking');
+            showUXPanels();
+            
+            const r = await fetch('/api/carly-chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: txt, claim_id: id})
+            });
+            
+            const d = await r.json();
+            if (d.success) {
+                id = d.claim_id;
+                
+                // Fix the address question
+                let responseText = d.carly_response;
+                responseText = responseText.replace(/what's your address in queensland/gi, "what's your address");
+                responseText = responseText.replace(/What's your address in Queensland/gi, "What's your address");
+                responseText = responseText.replace(/address in queensland/gi, "address");
+                
+                msg('c', responseText);
+                speak(responseText);
+                setAgent('carly', 'active');
+                
+                // Add reasoning based on message
+                if (txt.toLowerCase().includes('roof')) {
+                    addReasoning(`Because you mentioned a roof leak, I'm prioritizing roofing professionals.`);
+                } else if (txt.toLowerCase().includes('water')) {
+                    addReasoning(`Because you mentioned water damage, I'm checking for plumbers.`);
+                }
+                
+                if (d.ready_for_photo) {
+                    updateIntentPreview(2);
+                }
+            }
+        }
+
+        function msg(who, txt) {
+            const m = document.createElement('div');
+            m.className = `msg ${who}`;
+            m.innerHTML = `<div class="bubble">${txt}</div>`;
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.appendChild(m);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function speak(txt) {
+            const u = new SpeechSynthesisUtterance(txt);
+            u.lang = 'en-AU';
+            u.rate = 1.0;
+            u.pitch = 1.1;
+            speechSynthesis.speak(u);
+        }
+
+        function setAgent(name, status) {
+            const agent = document.getElementById(`agent-${name}`);
+            if (!agent) return;
+            
+            agent.classList.remove('active', 'thinking', 'complete');
+            const statusEl = agent.querySelector('.agent-status');
+            
+            if (status === 'active') {
+                agent.classList.add('active');
+                statusEl.textContent = 'Active';
+            } else if (status === 'thinking') {
+                agent.classList.add('thinking');
+                statusEl.textContent = 'Thinking...';
+            } else if (status === 'complete') {
+                agent.classList.add('complete');
+                statusEl.textContent = 'Complete';
+            } else {
+                statusEl.textContent = 'Idle';
+            }
+        }
+
+        // New UX Functions
+        function showUXPanels() {
+            document.getElementById('uxPanels').style.display = 'grid';
+        }
+
+        function updateIntentPreview(step) {
+            const steps = [1, 2, 3];
+            steps.forEach(s => {
+                const check = document.getElementById(`check${s}`);
+                if (s < step) {
+                    check.className = 'intent-check completed';
+                    check.textContent = '✓';
+                } else if (s === step) {
+                    check.className = 'intent-check active';
+                    check.textContent = s;
+                } else {
+                    check.className = 'intent-check';
+                    check.textContent = s;
+                }
+            });
+        }
+
+        function addReasoning(text) {
+            const feed = document.getElementById('reasoningFeed');
+            const item = document.createElement('div');
+            item.className = 'reasoning-item';
+            item.innerHTML = `<span class="reasoning-because">Because</span> ${text}`;
+            feed.appendChild(item);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function showStores(stores, tools) {
+            const panel = document.getElementById('storesPanel');
+            const container = document.getElementById('storesContainer');
+            
+            let html = '';
+            stores.forEach(store => {
+                html += `
+                    <div class="store-item">
+                        <div class="store-name">${store.name} ⭐${store.rating || '4.5'}</div>
+                        <div class="store-details">${store.address} (${store.distance || '2.3 km'})</div>
+                `;
+                
+                if (store.available_tools && store.available_tools.length > 0) {
+                    store.available_tools.forEach(tool => {
+                        html += `
+                            <div class="tool-item">
+                                • ${tool.name} <span class="tool-price">${tool.price}</span> - ${tool.aisle}
+                            </div>
+                        `;
+                    });
+                } else if (tools) {
+                    tools.slice(0, 2).forEach(tool => {
+                        html += `
+                            <div class="tool-item">
+                                • ${tool.name} <span class="tool-price">${tool.price}</span>
+                            </div>
+                        `;
+                    });
+                }
+                
+                html += `</div>`;
+            });
+            
+            container.innerHTML = html;
+            panel.style.display = 'block';
+        }
+
+        function startTracking(trackingId, eta) {
+            currentTrackingId = trackingId;
+            const trackingInfo = document.getElementById('trackingInfo');
+            const progressFill = document.getElementById('progressFill');
+            const etaDisplay = document.getElementById('tradieETA');
+            
+            trackingInfo.style.display = 'block';
+            
+            if (trackingInterval) clearInterval(trackingInterval);
+            
+            trackingInterval = setInterval(async () => {
+                try {
+                    const r = await fetch(`/api/get-tracking/${trackingId}`);
+                    const d = await r.json();
+                    
+                    if (d.success) {
+                        progressFill.style.width = d.progress + '%';
+                        etaDisplay.textContent = `ETA: ${Math.round(d.eta_remaining)} min`;
+                        
+                        if (d.progress >= 100) {
+                            clearInterval(trackingInterval);
+                            document.getElementById('tradieMessage').textContent = 'Tradie has arrived!';
+                        }
+                    }
+                } catch (err) {
+                    console.error('Tracking error:', err);
+                }
+            }, 5000);
+        }
+
+        function updateMap(address, lat, lng) {
+            const mapContainer = document.getElementById('map');
+            
+            if (lat && lng && window.GOOGLE_API_KEY) {
+                mapContainer.innerHTML = `
+                    <iframe class="map-iframe"
+                        frameborder="0"
+                        style="border:0"
+                        src="https://www.google.com/maps/embed/v1/place?key=${window.GOOGLE_API_KEY}&q=${lat},${lng}&zoom=15">
+                    </iframe>
+                    <div class="map-marker">📍</div>
+                `;
+            } else if (address && window.GOOGLE_API_KEY) {
+                mapContainer.innerHTML = `
+                    <iframe class="map-iframe"
+                        frameborder="0"
+                        style="border:0"
+                        src="https://www.google.com/maps/embed/v1/place?key=${window.GOOGLE_API_KEY}&q=${encodeURIComponent(address)}&zoom=15">
+                    </iframe>
+                    <div class="map-marker">📍</div>
+                `;
+            } else {
+                mapContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📍</div>
+                        <div>${address || 'Waiting for location...'}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Socket events
+        io.on('update_map', (data) => {
+            if (data.address) {
+                updateMap(data.address, data.lat, data.lng);
+                msg('system', `📍 Location set: ${data.address}`);
+            }
+        });
+
+        io.on('tradie_confirmed', (data) => {
+            msg('system', `✅ ${data.message} ETA: ${data.eta}`);
+            setAgent('phone', 'complete');
+            setAgent('finance', 'active');
+            document.getElementById('helpStatus').textContent = data.message;
+            
+            if (data.tracking_id) {
+                startTracking(data.tracking_id, parseInt(data.eta));
+            }
+            
+            addReasoning(`Because you confirmed help is needed, I've dispatched a tradie with ETA ${data.eta}.`);
+            updateIntentPreview(3);
+        });
+
+        io.on('show_diy_options', (data) => {
+            msg('system', data.message || '🛠️ DIY options available!');
+            if (data.stores) {
+                showStores(data.stores, data.tools);
+            }
+            setAgent('diy', 'active');
+        });
+
+        io.on('call_update', (data) => {
+            if (data.message) {
+                msg('system', data.message);
+            }
+            if (data.status === 'ringing') {
+                setAgent('phone', 'thinking');
+                addReasoning(`Calling a local tradie now. The phone is ringing.`);
+            }
+        });
+
+        window.onload = () => {
+            setTimeout(() => {
+                const g = "Hi! I'm Carly. What's your emergency?";
+                msg('c', g);
+                speak(g);
+                setAgent('carly', 'active');
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ -->
