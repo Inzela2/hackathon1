@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Damage Photo - Sophiie Responder</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <div class="logo">SOPHIIE RESPONDER</div>
+            <div class="nav-links">
+                <a href="index.html">← Back to Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero">
+            <div class="hero-badge">Step 2 of 3</div>
+            <h1>📸 Show Us the Damage</h1>
+            <p class="hero-subtitle">
+                Our Visual Agent will analyze the photo and estimate repair costs instantly
+            </p>
+        </div>
+
+        <div class="card">
+            <div id="claimInfo" class="info-box">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span class="loading"></span>
+                    <span>Loading claim information...</span>
+                </div>
+            </div>
+
+            <div class="upload-zone" id="uploadZone">
+                <input type="file" id="photoInput" accept="image/*" capture="environment">
+                <label for="photoInput" style="cursor: pointer; display: block;">
+                    <div class="upload-icon">📷</div>
+                    <p class="upload-text">Take Photo or Upload</p>
+                    <p class="upload-hint">Tap to open camera or select from library</p>
+                </label>
+            </div>
+
+            <div id="preview" style="display:none;">
+                <img id="previewImage" alt="Damage preview">
+                <button id="uploadBtn" class="btn btn-primary">
+                    <span>🔍</span>
+                    <span>Analyze Damage</span>
+                </button>
+            </div>
+
+            <div id="analysisResult" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script src="js/upload.js"></script>
+</body>
+</html>

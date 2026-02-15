@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Mode - Sophiie Responder</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <div class="logo">SOPHIIE RESPONDER</div>
+            <div class="nav-links">
+                <a href="index.html">← Back to Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="voice-container">
+            <div class="hero-badge">🎤 Voice Mode Active</div>
+            <h1>Speak Your Emergency</h1>
+            <p class="hero-subtitle">
+                Just like calling for help - but instant
+            </p>
+
+            <button id="voiceButton" class="voice-button">
+                🎤
+            </button>
+
+            <div id="voiceStatus" class="voice-status">
+                Tap microphone to start
+            </div>
+
+            <div id="voiceTranscript" class="voice-transcript" style="display:none;">
+                <p id="transcriptText" style="color: var(--text-secondary); font-style: italic;">
+                    Your words will appear here...
+                </p>
+            </div>
+
+            <div id="voiceResponse" class="card" style="max-width: 600px; margin-top: 2rem; display:none;">
+                <!-- AI response will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/voice.js"></script>
+</body>
+</html>
