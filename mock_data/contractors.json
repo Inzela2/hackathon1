@@ -1,0 +1,27 @@
+{
+  "roofer": [
+    {"name": "Dave's Roofing", "base_rate": 150, "rating": 4.8, "speed": "fast"},
+    {"name": "Apex Roof Repairs", "base_rate": 180, "rating": 4.9, "speed": "medium"},
+    {"name": "QuickFix Roofing", "base_rate": 120, "rating": 4.5, "speed": "fast"}
+  ],
+  "plumber": [
+    {"name": "24/7 Plumbing", "base_rate": 130, "rating": 4.7, "speed": "fast"},
+    {"name": "Pro Plumbers", "base_rate": 160, "rating": 4.8, "speed": "medium"},
+    {"name": "Budget Plumbing", "base_rate": 100, "rating": 4.3, "speed": "slow"}
+  ],
+  "builder": [
+    {"name": "Storm Repair Co", "base_rate": 200, "rating": 4.9, "speed": "medium"},
+    {"name": "Emergency Builders", "base_rate": 220, "rating": 4.7, "speed": "fast"},
+    {"name": "Reliable Repairs", "base_rate": 180, "rating": 4.6, "speed": "medium"}
+  ],
+  "electrician": [
+    {"name": "Spark Electrical", "base_rate": 140, "rating": 4.8, "speed": "fast"},
+    {"name": "PowerPro Electric", "base_rate": 160, "rating": 4.9, "speed": "medium"},
+    {"name": "Quick Sparks", "base_rate": 110, "rating": 4.4, "speed": "fast"}
+  ],
+  "contractor": [
+    {"name": "All-Trade Repairs", "base_rate": 170, "rating": 4.7, "speed": "medium"},
+    {"name": "Emergency Services", "base_rate": 190, "rating": 4.8, "speed": "fast"},
+    {"name": "General Contractors", "base_rate": 150, "rating": 4.5, "speed": "medium"}
+  ]
+}
